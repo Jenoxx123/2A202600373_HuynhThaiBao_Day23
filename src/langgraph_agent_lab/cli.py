@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Protocol, cast
 
 import typer
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from .graph import build_graph
 from .metrics import MetricsReport, metric_from_state, summarize_metrics, write_metrics
@@ -19,6 +19,11 @@ from .state import initial_state
 app = typer.Typer(no_args_is_help=True)
 
 
+class InvokableGraph(Protocol):
+    def invoke(self, state: object, config: object | None = None) -> dict[str, object]:
+        ...
+
+
 @app.command("run-scenarios")
 def run_scenarios(
     config: Annotated[Path, typer.Option("--config")],
@@ -28,13 +33,19 @@ def run_scenarios(
     cfg = yaml.safe_load(config.read_text(encoding="utf-8"))
     scenarios = load_scenarios(cfg["scenarios_path"])
     checkpointer = build_checkpointer(cfg.get("checkpointer", "memory"), cfg.get("database_url"))
-    graph = build_graph(checkpointer=checkpointer)
+    graph = cast(InvokableGraph, build_graph(checkpointer=checkpointer))
     metrics = []
     for scenario in scenarios:
         state = initial_state(scenario)
         run_config = {"configurable": {"thread_id": state["thread_id"]}}
         final_state = graph.invoke(state, config=run_config)
-        metrics.append(metric_from_state(final_state, scenario.expected_route.value, scenario.requires_approval))
+        metrics.append(
+            metric_from_state(
+                final_state,
+                scenario.expected_route.value,
+                scenario.requires_approval,
+            )
+        )
     report = summarize_metrics(metrics)
     write_metrics(report, output)
     if cfg.get("report_path"):

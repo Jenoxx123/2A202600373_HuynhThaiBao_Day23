@@ -37,9 +37,17 @@ Describe at least two failure modes you considered:
 
 Explain how you used checkpointer, thread id, state history, or crash-resume.
 
+- Checkpointer used (`memory` / `sqlite` / `postgres`):
+- Database URL (mask password before submission):
+- Thread id strategy (example: `thread-<scenario_id>`):
+- Evidence from DBeaver (table names, row counts, screenshot note):
+- Optional crash-resume or state history evidence:
+
 ## 7. Extension work
 
 Describe any extension you completed: SQLite/Postgres, time travel, fan-out/fan-in, graph diagram, tracing.
+
+- Postgres notes (if used): package version, connection details, compatibility/API changes made.
 
 ## 8. Improvement plan
 

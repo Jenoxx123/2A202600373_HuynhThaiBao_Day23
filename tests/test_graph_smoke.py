@@ -2,11 +2,14 @@ import importlib.util
 
 import pytest
 
-pytestmark = pytest.mark.skipif(importlib.util.find_spec("langgraph") is None, reason="langgraph not installed in local environment")
-
 from langgraph_agent_lab.graph import build_graph
 from langgraph_agent_lab.persistence import build_checkpointer
 from langgraph_agent_lab.state import Route, Scenario, initial_state
+
+pytestmark = pytest.mark.skipif(
+    importlib.util.find_spec("langgraph") is None,
+    reason="langgraph not installed in local environment",
+)
 
 
 @pytest.mark.parametrize(
@@ -15,9 +18,12 @@ from langgraph_agent_lab.state import Route, Scenario, initial_state
         ("How do I reset my password?", Route.SIMPLE.value),
         ("Please lookup order status for order 123", Route.TOOL.value),
         ("Refund this customer", Route.RISKY.value),
+        ("Can you fix it?", Route.MISSING_INFO.value),
+        ("System timeout unavailable", Route.ERROR.value),
+        ("Please remove account and check order status", Route.RISKY.value),
     ],
 )
-def test_graph_runs_basic_routes(query, expected_route):
+def test_graph_runs_basic_routes(query: str, expected_route: str) -> None:
     graph = build_graph(checkpointer=build_checkpointer("memory"))
     scenario = Scenario(id="smoke", query=query, expected_route=Route(expected_route))
     state = initial_state(scenario)

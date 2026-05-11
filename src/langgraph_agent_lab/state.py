@@ -1,14 +1,14 @@
 """State schema for the Day 08 LangGraph lab.
 
-Students should extend the schema only when needed. Keep state lean and serializable.
+Keep state lean and serializable. Use append-only reducers only for audit trails.
 """
 
 from __future__ import annotations
 
 from enum import StrEnum
+from operator import add
 from typing import Annotated, Any, TypedDict
 
-from operator import add
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -39,10 +39,18 @@ class ApprovalDecision(BaseModel):
 
 
 class AgentState(TypedDict, total=False):
-    """LangGraph state.
+    """LangGraph state contract.
 
-    TODO(student): decide which fields should be append-only and which should be overwritten.
-    The current annotations give a safe starting point for auditability.
+    Append-only reducer fields:
+    - messages
+    - tool_results
+    - errors
+    - events
+
+    Overwrite fields:
+    - route, risk_level, attempt, max_attempts
+    - final_answer, pending_question, proposed_action, approval
+    - evaluation_result
     """
 
     thread_id: str
@@ -102,6 +110,11 @@ def initial_state(scenario: Scenario) -> AgentState:
     }
 
 
-def make_event(node: str, event_type: str, message: str, **metadata: Any) -> dict[str, Any]:
+def make_event(node: str, event_type: str, message: str, **metadata: object) -> dict[str, object]:
     """Create a normalized event payload."""
-    return LabEvent(node=node, event_type=event_type, message=message, metadata=metadata).model_dump()
+    return LabEvent(
+        node=node,
+        event_type=event_type,
+        message=message,
+        metadata=metadata,
+    ).model_dump()
